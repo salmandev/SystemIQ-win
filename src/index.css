@@ -1,0 +1,373 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Windows Intelligence Optimizer - Fluent Design System
+   ============================================================ */
+
+/* Light Theme (Default) */
+:root {
+  --accent: #0078D4;
+  --accent-hover: #106EBE;
+  --accent-light: #DEECF9;
+  --accent-gradient: linear-gradient(135deg, #0078D4 0%, #005A9E 100%);
+
+  --bg-primary: #F3F3F3;
+  --bg-secondary: #FAFAFA;
+  --bg-tertiary: #FFFFFF;
+  --bg-card: rgba(255, 255, 255, 0.7);
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --bg-active: rgba(0, 0, 0, 0.08);
+  --bg-input: rgba(255, 255, 255, 0.9);
+  --bg-sidebar: rgba(255, 255, 255, 0.85);
+  --bg-titlebar: rgba(255, 255, 255, 0.8);
+  --bg-overlay: rgba(0, 0, 0, 0.3);
+  --bg-tooltip: #FFFFFF;
+
+  --text-primary: #1A1A1A;
+  --text-secondary: #616161;
+  --text-tertiary: #8A8A8A;
+  --text-inverse: #FFFFFF;
+  --text-accent: #0078D4;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-strong: rgba(0, 0, 0, 0.15);
+
+  --success: #0F7B0F;
+  --success-bg: #DFF6DD;
+  --warning: #9D5D00;
+  --warning-bg: #FFF4CE;
+  --error: #C42B1C;
+  --error-bg: #FDE7E9;
+  --info: #0078D4;
+  --info-bg: #DEECF9;
+
+  --mica: rgba(255, 255, 255, 0.65);
+  --smoke: rgba(0, 0, 0, 0.3);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.3);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.12);
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  --chart-1: #0078D4;
+  --chart-2: #00B294;
+  --chart-3: #8764B8;
+  --chart-4: #E3008C;
+  --chart-5: #CA5010;
+  --chart-6: #038387;
+  --chart-7: #4868D5;
+  --chart-8: #498205;
+
+  color-scheme: light;
+}
+
+/* Dark Theme */
+.dark {
+  --accent: #60CDFF;
+  --accent-hover: #98D4F2;
+  --accent-light: #003B5C;
+  --accent-gradient: linear-gradient(135deg, #60CDFF 0%, #0078D4 100%);
+
+  --bg-primary: #202020;
+  --bg-secondary: #282828;
+  --bg-tertiary: #2D2D2D;
+  --bg-card: rgba(45, 45, 45, 0.7);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.1);
+  --bg-input: rgba(30, 30, 30, 0.9);
+  --bg-sidebar: rgba(32, 32, 32, 0.85);
+  --bg-titlebar: rgba(32, 32, 32, 0.8);
+  --bg-overlay: rgba(0, 0, 0, 0.5);
+  --bg-tooltip: #2D2D2D;
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #C5C5C5;
+  --text-tertiary: #8A8A8A;
+  --text-inverse: #1A1A1A;
+  --text-accent: #60CDFF;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
+  --success: #6CCB5F;
+  --success-bg: #0A2E0A;
+  --warning: #FCE100;
+  --warning-bg: #2E2700;
+  --error: #FF99A4;
+  --error-bg: #3B0A0A;
+  --info: #60CDFF;
+  --info-bg: #003B5C;
+
+  --mica: rgba(32, 32, 32, 0.65);
+  --smoke: rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(32, 32, 32, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  --chart-1: #60CDFF;
+  --chart-2: #00E8A2;
+  --chart-3: #B4A0FF;
+  --chart-4: #FF6EB4;
+  --chart-5: #FFB060;
+  --chart-6: #00CCD6;
+  --chart-7: #8AA8FF;
+  --chart-8: #6DDB5E;
+
+  color-scheme: dark;
+}
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Glassmorphism Card */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+/* Fluent Card */
+.fluent-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.fluent-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+/* Fluent Button */
+.fluent-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  outline: none;
+  user-select: none;
+}
+
+.fluent-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.fluent-btn-primary {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+.fluent-btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.fluent-btn-subtle {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border);
+}
+.fluent-btn-subtle:hover {
+  background: var(--bg-hover);
+}
+
+.fluent-btn-outline {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.fluent-btn-outline:hover {
+  background: var(--accent-light);
+}
+
+/* Progress Ring */
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Score Colors */
+.score-excellent { color: var(--success); }
+.score-good { color: var(--chart-2); }
+.score-fair { color: var(--warning); }
+.score-poor { color: var(--error); }
+.score-critical { color: var(--error); }
+
+/* Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-safe { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); }
+.badge-error { background: var(--error-bg); color: var(--error); }
+.badge-info { background: var(--info-bg); color: var(--info); }
+
+/* Skeleton Loading */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-active) 50%, var(--bg-hover) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Titlebar drag region */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Transition utilities */
+.transition-fluent {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animation fallbacks (also defined in tailwind.config.js) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Background scan indicator bar */
+@keyframes scanBar {
+  0% { width: 0%; margin-left: 0; }
+  50% { width: 60%; margin-left: 20%; }
+  100% { width: 0%; margin-left: 100%; }
+}
+
+.animate-scan-bar {
+  animation: scanBar 1.5s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Main content scrollbar */
+main::-webkit-scrollbar {
+  width: 6px;
+}
+
+main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+main::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* Smooth scrolling */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}

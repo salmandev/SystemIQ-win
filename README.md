@@ -178,16 +178,13 @@ intelligent-windows-agent/
 ### Prerequisites
 - **Node.js** 18+ 
 - **npm** 9+
-- **Visual Studio Build Tools** (for native modules)
+- **Visual Studio Build Tools** (for native modules like better-sqlite3)
 
 ### Install & Run
 
 ```bash
-# Install dependencies
-npm install --legacy-peer-deps
-
-# Rebuild native modules for Electron
-npx electron-rebuild
+# Install dependencies (automatically rebuilds native modules via postinstall)
+npm install
 
 # Start dev server (Vite + Electron with hot reload)
 npm run dev
@@ -196,26 +193,92 @@ npm run dev
 ### Build for Production
 
 ```bash
-# Type-check + build + package
+# Build all targets (NSIS installer + MSI + ZIP)
 npm run build
 
-# Output: release/Windows Intelligence Optimizer Setup.exe
+# Build specific formats
+npm run build:nsis    # NSIS installer only (.exe)
+npm run build:msi     # MSI installer only (.msi)
+npm run build:zip     # Portable ZIP only (.zip)
+
+# Clean build (removes dist/, dist-electron/, release/ then builds)
+npm run dist
+
+# Clean build for specific format
+npm run dist:nsis
+npm run dist:msi
+
+# Build unpacked directory (for testing without installer)
+npm run build:dir
 ```
+
+**Output:** `release/` directory
+- `SystemIQ Setup X.X.X.exe` (NSIS installer)
+- `SystemIQ X.X.X.msi` (MSI installer)
+- `SystemIQ-X.X.X-win.zip` (portable)
+- `win-unpacked/` (unpacked app for testing)
 
 ### Development Commands
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start Vite dev server + Electron (hot reload) |
-| `npm run build` | TypeScript check + Vite build + electron-builder |
+| `npm run build` | Type-check + Vite build + package all formats |
+| `npm run build:nsis` | Build NSIS installer only |
+| `npm run build:msi` | Build MSI installer only |
+| `npm run build:zip` | Build portable ZIP only |
+| `npm run build:dir` | Build unpacked directory (no installer) |
+| `npm run dist` | Clean + build all formats |
+| `npm run dist:nsis` | Clean + build NSIS installer |
+| `npm run dist:msi` | Clean + build MSI installer |
 | `npm run typecheck` | TypeScript type checking only |
 | `npm run rebuild` | Rebuild native modules for Electron |
-| `npx vite --open` | Open UI in browser (mock data, no Electron) |
+| `npm run clean` | Remove dist/, dist-electron/, release/ |
+| `npm run preview` | Preview production build in browser |
+
+### Testing the App
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Run in development mode (with hot reload)
+npm run dev
+
+# 3. Test production build without installer
+npm run build:dir
+# Then run: release\win-unpacked\SystemIQ.exe
+
+# 4. Build full installer
+npm run dist:nsis
+# Then install: release\SystemIQ Setup X.X.X.exe
+```
+
+### Troubleshooting
+
+**Native module errors (better-sqlite3):**
+```bash
+npm run rebuild
+```
+
+**Clean rebuild:**
+```bash
+npm run clean
+npm install
+npm run rebuild
+npm run dev
+```
+
+**Type errors:**
+```bash
+npm run typecheck
+```
 
 ### Important Notes
 - **Electron is pinned to v33** — do not run `npm audit fix --force` as it upgrades to incompatible v42
-- **better-sqlite3 is pinned to 11.8.0** — must be rebuilt for Electron's V8 via `npx electron-rebuild`
+- **better-sqlite3 is pinned to 11.8.0** — must be rebuilt for Electron's V8 via `npm run rebuild`
 - The app includes a **full mock API** (`src/services/api.ts`) so all features work even without the database
+- **postinstall** hook automatically runs `electron-builder install-app-deps` to rebuild native modules
 
 ---
 

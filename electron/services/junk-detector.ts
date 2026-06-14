@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { v4 as uuid } from 'uuid';
+import type { SettingsManager } from './settings-manager';
 import type { JunkScanResult, JunkCategory, JunkItem } from '../../shared/types';
 
 interface JunkDefinition {
@@ -18,7 +19,7 @@ interface JunkDefinition {
 export class JunkDetector {
   private junkDefinitions: JunkDefinition[] = [];
 
-  constructor() {
+  constructor(private settings?: SettingsManager) {
     this.initializeDefinitions();
   }
 

@@ -4,7 +4,8 @@ import { api } from '../services/api';
 import { formatSize, formatTimeAgo } from '../services/utils';
 
 export function OneClickOptimize() {
-  const { optimizationPlan, setOptimizationPlan } = useAppStore();
+  const optimizationPlan = useAppStore(s => s.optimizationPlan);
+  const setOptimizationPlan = useAppStore(s => s.setOptimizationPlan);
   const [mode, setMode] = useState<'safe' | 'aggressive' | 'custom'>('safe');
   const [executing, setExecuting] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -55,7 +56,8 @@ export function OneClickOptimize() {
 }
 
 export function Automation() {
-  const { scheduledTasks, setScheduledTasks } = useAppStore();
+  const scheduledTasks = useAppStore(s => s.scheduledTasks);
+  const setScheduledTasks = useAppStore(s => s.setScheduledTasks);
   useEffect(() => { api.automation.getTasks().then(setScheduledTasks); }, []);
   const handleToggle = async (id: string, enabled: boolean) => { await api.automation.toggle(id, enabled); setScheduledTasks(scheduledTasks.map(t => t.id === id ? { ...t, enabled } : t)); };
 
@@ -76,7 +78,8 @@ export function Automation() {
 }
 
 export function Plugins() {
-  const { plugins, setPlugins } = useAppStore();
+  const plugins = useAppStore(s => s.plugins);
+  const setPlugins = useAppStore(s => s.setPlugins);
   useEffect(() => { if (plugins.length === 0) api.plugins.get().then(setPlugins); }, []);
   const handleToggle = async (id: string, enabled: boolean) => { await api.plugins.toggle(id, enabled); setPlugins(plugins.map(p => p.id === id ? { ...p, enabled } : p)); };
 
@@ -97,7 +100,8 @@ export function Plugins() {
 }
 
 export function Settings() {
-  const { theme, toggleTheme } = useAppStore();
+  const theme = useAppStore(s => s.theme);
+  const toggleTheme = useAppStore(s => s.toggleTheme);
   return (
     <div className="space-y-6 max-w-[800px] mx-auto">
       <div><h1 className="text-2xl font-bold">Settings</h1><p className="text-sm text-[var(--text-secondary)]">Configure Windows Intelligence Optimizer</p></div>

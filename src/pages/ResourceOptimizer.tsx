@@ -5,19 +5,18 @@ import { api } from '../services/api';
 import { formatSize } from '../services/utils';
 
 export function ResourceOptimizer() {
-  const { realtimeData, setRealtimeData, systemInfo } = useAppStore();
+  const realtimeData = useAppStore(s => s.realtimeData);
+  const systemInfo = useAppStore(s => s.systemInfo);
   const [cpuHistory, setCpuHistory] = useState<number[]>(Array(30).fill(30));
   const [memHistory, setMemHistory] = useState<number[]>(Array(30).fill(55));
 
+  // Consume realtime data from store (Layout already polls it)
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const data = await api.system.getRealtime();
-      setRealtimeData(data);
-      setCpuHistory(prev => [...prev.slice(1), data.cpu.load]);
-      setMemHistory(prev => [...prev.slice(1), data.memory.usedPercent]);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
+    if (realtimeData) {
+      setCpuHistory(prev => [...prev.slice(1), realtimeData.cpu.load]);
+      setMemHistory(prev => [...prev.slice(1), realtimeData.memory.usedPercent]);
+    }
+  }, [realtimeData]);
 
   const rt = realtimeData;
   if (!rt) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Loading resource data...</p></div>;

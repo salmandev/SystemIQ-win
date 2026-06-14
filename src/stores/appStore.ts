@@ -1,9 +1,11 @@
 import { create } from 'zustand';
+import { api } from '../services/api';
 import type {
   SystemInfo, ProcessInfo, StorageScanResult, JunkScanResult,
   DuplicateScanResult, StartupItem, SsdHealth, HealthScore,
   AIRecommendation, AIMessage, OptimizationPlan, DevToolsScanResult,
-  ScheduledTask, Plugin
+  ScheduledTask, Plugin, SettingsConfig, PerformanceSample,
+  PerformanceAverages, NotificationEvent, VMInventory, ScanStatus,
 } from '../../shared/types';
 
 export interface Toast {
@@ -119,6 +121,30 @@ interface AppState {
   toasts: Toast[];
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
+
+  // Settings (typed)
+  settingsConfig: SettingsConfig | null;
+  setSettingsConfig: (config: SettingsConfig) => void;
+  updateSettings: (partial: Partial<SettingsConfig>) => Promise<void>;
+
+  // Performance History
+  performanceHistory: PerformanceSample[];
+  setPerformanceHistory: (samples: PerformanceSample[]) => void;
+  performanceAverages: PerformanceAverages | null;
+  setPerformanceAverages: (avg: PerformanceAverages | null) => void;
+
+  // Notifications
+  notifications: NotificationEvent[];
+  setNotifications: (events: NotificationEvent[]) => void;
+  dismissNotification: (id: string) => void;
+
+  // VM Inventory
+  vmInventory: VMInventory[];
+  setVMInventory: (vms: VMInventory[]) => void;
+
+  // Scan Status
+  scanStatus: Record<string, { status: ScanStatus; last_run: number }>;
+  setScanStatus: (status: Record<string, { status: ScanStatus; last_run: number }>) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -215,4 +241,36 @@ export const useAppStore = create<AppState>((set) => ({
   removeToast: (id) => set((s) => ({
     toasts: s.toasts.filter((t) => t.id !== id),
   })),
+
+  // Settings
+  settingsConfig: null,
+  setSettingsConfig: (config) => set({ settingsConfig: config }),
+  updateSettings: async (partial) => {
+    await api.settings.update(partial);
+    const updated = await api.settings.getAll();
+    set({ settingsConfig: updated });
+  },
+
+  // Performance History
+  performanceHistory: [],
+  setPerformanceHistory: (samples) => set({ performanceHistory: samples }),
+  performanceAverages: null,
+  setPerformanceAverages: (avg) => set({ performanceAverages: avg }),
+
+  // Notifications
+  notifications: [],
+  setNotifications: (events) => set({ notifications: events }),
+  dismissNotification: (id) => set((s) => ({
+    notifications: s.notifications.map((n) =>
+      n.id === id ? { ...n, dismissed: true } : n
+    ),
+  })),
+
+  // VM Inventory
+  vmInventory: [],
+  setVMInventory: (vms) => set({ vmInventory: vms }),
+
+  // Scan Status
+  scanStatus: {},
+  setScanStatus: (status) => set({ scanStatus: status }),
 }));

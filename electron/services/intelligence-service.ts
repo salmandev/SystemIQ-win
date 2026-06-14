@@ -4,16 +4,19 @@ import path from 'path';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import type { Database } from './database';
 import type {
   MachineProfile, RootCauseAnalysis, StorageTimelineEntry,
   PCHealthReport, OptimizationModeConfig, InstalledApp,
   PrivacyScanResult, ProcessInsight, DevProject,
-  DockerIntelligence, KubernetesWSLInfo,
+  DockerIntelligence, KubernetesWSLInfo, DockerGrowthAlert,
+  WSLDistribution,
 } from '../../shared/types';
 
 const execAsync = promisify(exec);
 
 export class IntelligenceService {
+  constructor(private db: Database | null = null) {}
   // ---- Machine Intelligence Profile ----
   async getProfile(): Promise<MachineProfile> {
     const [osInfo, cpu, mem, fsSize, graphics] = await Promise.all([
@@ -501,7 +504,66 @@ export class IntelligenceService {
     } catch { /* skip */ }
 
     result.totalSize = result.images.size + result.containers.size + result.volumes.size + result.buildCache.size;
+
+    // Persist to DB for history tracking
+    if (this.db) {
+      try {
+        this.db.saveDockerInventory({
+          images_count: result.images.count,
+          images_size: result.images.size,
+          containers_count: result.containers.count,
+          containers_size: result.containers.size,
+          volumes_count: result.volumes.count,
+          volumes_size: result.volumes.size,
+          build_cache_size: result.buildCache.size,
+          total_size: result.totalSize,
+          details: result,
+        });
+      } catch { /* non-critical */ }
+    }
+
     return result;
+  }
+
+  /** Get Docker growth alerts by comparing current vs previous inventory */
+  getDockerGrowthAlerts(): DockerGrowthAlert[] {
+    if (!this.db) return [];
+    try {
+      const history = this.db.getDockerHistory(2) as any[];
+      if (history.length < 2) return [];
+      const current = history[0];
+      const previous = history[1];
+      const alerts: DockerGrowthAlert[] = [];
+      const periodDays = Math.max(1, Math.round((current.timestamp - previous.timestamp) / (24 * 60 * 60 * 1000)));
+
+      const checkGrowth = (category: DockerGrowthAlert['category'], prevSize: number, currSize: number) => {
+        if (currSize <= prevSize) return;
+        const growth = currSize - prevSize;
+        const pct = prevSize > 0 ? (growth / prevSize) * 100 : 100;
+        if (growth > 100 * 1024 * 1024) { // > 100MB
+          alerts.push({
+            category,
+            previous_size: prevSize,
+            current_size: currSize,
+            growth_bytes: growth,
+            growth_percent: Math.round(pct * 10) / 10,
+            period_days: periodDays,
+            severity: growth > 5 * 1024 * 1024 * 1024 ? 'critical' : growth > 1024 * 1024 * 1024 ? 'warning' : 'info',
+            message: `Docker ${category} grew by ${this.formatSize(growth)} in ${periodDays} day(s)`,
+          });
+        }
+      };
+
+      checkGrowth('images', previous.images_size, current.images_size);
+      checkGrowth('containers', previous.containers_size, current.containers_size);
+      checkGrowth('volumes', previous.volumes_size, current.volumes_size);
+      checkGrowth('build_cache', previous.build_cache_size, current.build_cache_size);
+      checkGrowth('total', previous.total_size, current.total_size);
+
+      return alerts;
+    } catch {
+      return [];
+    }
   }
 
   // ---- Kubernetes / WSL Info ----
@@ -522,9 +584,57 @@ export class IntelligenceService {
         for (const line of lines) {
           const parts = line.trim().split(/\s+/);
           if (parts.length >= 2) {
+            const distroName = parts[0];
+            const state = parts.length >= 3 ? parts[2] : 'unknown';
+            const version = parts.length >= 4 ? `WSL ${parts[3]}` : 'WSL 2';
+
+            // Try to find VHDX file for this distribution
+            let vhdxPath: string | undefined;
+            let distroSize = 0;
+            const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local');
+            const possiblePaths = [
+              path.join(localAppData, 'Packages', `CanonicalGroupLimited*`, 'LocalState', 'ext4.vhdx'),
+              path.join(localAppData, 'Packages', `*Ubuntu*`, 'LocalState', 'ext4.vhdx'),
+              path.join(localAppData, 'Packages', `*Debian*`, 'LocalState', 'ext4.vhdx'),
+              path.join(localAppData, 'Docker', 'wsl', 'distro', 'ext4.vhdx'),
+            ];
+
+            // Search for distro-specific VHDX
+            const packagesDir = path.join(localAppData, 'Packages');
+            if (fs.existsSync(packagesDir)) {
+              try {
+                const packages = fs.readdirSync(packagesDir);
+                for (const pkg of packages) {
+                  if (pkg.toLowerCase().includes(distroName.toLowerCase().replace(/-/g, ''))) {
+                    const vhdx = path.join(packagesDir, pkg, 'LocalState', 'ext4.vhdx');
+                    if (fs.existsSync(vhdx)) {
+                      vhdxPath = vhdx;
+                      try { distroSize = fs.statSync(vhdx).size; } catch { /* */ }
+                      break;
+                    }
+                  }
+                }
+              } catch { /* skip */ }
+            }
+
             result.wsl.distros.push({
-              name: parts[0], size: 0, version: parts.length >= 4 ? `WSL ${parts[3]}` : 'WSL 2',
+              name: distroName,
+              size: distroSize,
+              version,
             });
+
+            // Persist individual distro to DB
+            if (this.db) {
+              try {
+                this.db.saveWSLDistro({
+                  distro_name: distroName,
+                  version,
+                  vhdx_path: vhdxPath,
+                  disk_size: distroSize,
+                  state: state === 'Running' ? 'running' : 'stopped',
+                });
+              } catch { /* non-critical */ }
+            }
           }
         }
       }

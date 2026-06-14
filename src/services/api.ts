@@ -10,6 +10,11 @@ import {
   CATEGORY_COLORS,
 } from './utils';
 
+import type {
+  SettingsConfig, PerformanceSample, PerformanceAverages,
+  NotificationEvent, VMInventory, ScanStatus,
+} from '../../shared/types';
+
 import {
   generateMockProcesses, generateMockStorageScan, generateMockJunkScan,
   generateMockDuplicateScan, generateMockStartupItems, generateMockSsdHealth,
@@ -147,6 +152,82 @@ function createMockApi() {
     settings: {
       get: async () => ({ developerMode: true, autoScan: false }),
       set: async () => {},
+      getAll: async (): Promise<SettingsConfig> => ({
+        feature_flags: {
+          first_scan_enabled: true, background_monitoring: true, storage_scanner: true,
+          docker_monitoring: true, wsl_monitoring: true, vm_scanning: true,
+          ai_assistant: true, developer_scanning: true, junk_detection: true, duplicate_detection: true,
+        },
+        scan_preferences: {
+          scan_depth: 'normal', scan_intensity: 'balanced', schedule_interval: '1hr',
+          max_scan_time: 60, include_drives: ['C:', 'D:'], ignore_folders: ['Windows', '$Recycle.Bin'],
+          large_file_threshold: 52428800, hash_method: 'balanced', incremental_scanning: true,
+        },
+        notification_rules: {
+          disk_warning_threshold: 80, disk_critical_threshold: 90, memory_threshold: 85,
+          docker_size_alert: 21474836480, docker_growth_alert: 5368709120,
+          startup_app_added: true, new_large_file: true,
+        },
+        optimization_rules: {
+          auto_clean_safe: false, confirm_moderate: true, confirm_aggressive: true,
+          rollback_enabled: true, data_retention_days: 90,
+        },
+        user_preferences: {
+          theme: 'dark', language: 'en', animations: true,
+          start_with_windows: false, run_background: true, start_minimized: false,
+        },
+      }),
+      update: async () => true,
+    },
+    performance: {
+      getHistory: async (_durationMs?: number): Promise<PerformanceSample[]> => {
+        const now = Date.now();
+        return Array.from({ length: 60 }, (_, i) => ({
+          timestamp: now - (60 - i) * 60000,
+          cpu_load: 20 + Math.random() * 40,
+          mem_used: 17179869184 + Math.random() * 4294967296,
+          mem_total: 34359738368,
+          disk_read: Math.random() * 104857600,
+          disk_write: Math.random() * 52428800,
+          net_rx: Math.random() * 10485760,
+          net_tx: Math.random() * 5242880,
+        }));
+      },
+      getAverages: async (_durationMs?: number): Promise<PerformanceAverages> => ({
+        period: '1h', cpu_avg: 35, cpu_max: 78, mem_avg: 19327352832, mem_max: 23622320128,
+        disk_read_avg: 52428800, disk_write_avg: 26214400, net_rx_avg: 5242880, net_tx_avg: 2621440,
+        sample_count: 720,
+      }),
+    },
+    notifications: {
+      get: async (): Promise<NotificationEvent[]> => [
+        {
+          id: 'n1', type: 'disk', title: 'Disk Usage Warning',
+          message: 'C: drive is at 75.6% capacity', severity: 'warning',
+          timestamp: Date.now() - 300000, dismissed: false,
+          action: { label: 'Run Cleanup', handler: 'optimize', params: { mode: 'safe' } },
+        },
+      ],
+      dismiss: async () => true,
+    },
+    vm: {
+      scan: async (): Promise<VMInventory[]> => [
+        {
+          id: 'vm-1', name: 'Ubuntu 22.04', type: 'hyperv', state: 'stopped',
+          memory: 4294967296, cpus: 4, disks: [{ path: 'C:\\VMs\\ubuntu.vhdx', size: 32212254720, type: 'vhdx' }],
+          snapshots: [], total_size: 32212254720, last_used: Date.now() - 86400000 * 3, path: 'C:\\VMs',
+        },
+      ],
+    },
+    scan: {
+      getStatus: async (): Promise<Record<string, { status: ScanStatus; last_run: number }>> => ({
+        'system-info': { status: 'completed', last_run: Date.now() - 300000 },
+        storage: { status: 'completed', last_run: Date.now() - 3600000 },
+        docker: { status: 'idle', last_run: Date.now() - 21600000 },
+        wsl: { status: 'idle', last_run: Date.now() - 21600000 },
+        vm: { status: 'idle', last_run: 0 },
+      }),
+      trigger: async () => null,
     },
     shell: { open: async () => {} },
     plugins: {
@@ -219,6 +300,10 @@ function createFallbackApi() {
     devtools: wrap(electronApi.devtools, mockApi.devtools),
     automation: wrap(electronApi.automation, mockApi.automation),
     settings: wrap(electronApi.settings, mockApi.settings),
+    performance: wrap(electronApi.performance ?? {}, mockApi.performance),
+    notifications: wrap(electronApi.notifications ?? {}, mockApi.notifications),
+    vm: wrap(electronApi.vm ?? {}, mockApi.vm),
+    scan: wrap(electronApi.scan ?? {}, mockApi.scan),
     shell: electronApi.shell,
     plugins: wrap(electronApi.plugins, mockApi.plugins),
     intelligence: wrap(electronApi.intelligence ?? {}, mockApi.intelligence),

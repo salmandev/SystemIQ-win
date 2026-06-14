@@ -171,8 +171,6 @@ body {
 /* Glassmorphism Card */
 .glass-card {
   background: var(--glass-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   box-shadow: var(--shadow-md);
@@ -181,12 +179,10 @@ body {
 /* Fluent Card */
 .fluent-card {
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .fluent-card:hover {
@@ -307,7 +303,7 @@ body {
 
 /* Transition utilities */
 .transition-fluent {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 /* Animation fallbacks (also defined in tailwind.config.js) */

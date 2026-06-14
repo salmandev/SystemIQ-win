@@ -3,6 +3,7 @@ import path from 'path';
 import os from 'os';
 import { v4 as uuid } from 'uuid';
 import type { Database } from './database';
+import type { SettingsManager } from './settings-manager';
 import type { StorageScanResult, FolderNode, FileInfo, FolderInfo, StorageGrowthAlert, StorageCategory } from '../../shared/types';
 
 const EXCLUDED_DIRS = new Set([
@@ -11,7 +12,10 @@ const EXCLUDED_DIRS = new Set([
 ]);
 
 export class StorageScanner {
-  constructor(private db: Database) {}
+  constructor(
+    private db: Database,
+    private settings?: SettingsManager,
+  ) {}
 
   async scan(drive?: string): Promise<StorageScanResult> {
     const scanId = uuid();
@@ -41,9 +45,12 @@ export class StorageScanner {
 
   private async scanDrives(specificDrive?: string) {
     const drives: { drive: string; label: string; totalSize: number; usedSpace: number; freeSpace: number; rootFolders: FolderNode[] }[] = [];
+    const configuredDrives = this.settings?.scanPreferences.include_drives;
     const driveLetters = specificDrive
       ? [specificDrive]
-      : this.getAvailableDrives();
+      : configuredDrives && configuredDrives.length > 0
+        ? configuredDrives
+        : this.getAvailableDrives();
 
     for (const letter of driveLetters) {
       try {
@@ -103,6 +110,9 @@ export class StorageScanner {
       for (const entry of entries) {
         if (EXCLUDED_DIRS.has(entry.name)) continue;
         if (entry.name.startsWith('.')) continue;
+        // Skip folders in the ignore list from settings
+        const ignoreFolders = this.settings?.scanPreferences.ignore_folders || [];
+        if (ignoreFolders.some(ig => entry.name.toLowerCase() === ig.toLowerCase())) continue;
 
         const fullPath = path.join(dirPath, entry.name);
         if (entry.isDirectory()) {
@@ -195,6 +205,7 @@ export class StorageScanner {
 
   private walkForFiles(dirPath: string, files: FileInfo[], depth = 0) {
     if (depth > 5 || files.length > 5000) return;
+    const largeFileThreshold = this.settings?.scanPreferences.large_file_threshold || 50 * 1024 * 1024;
     try {
       const entries = fs.readdirSync(dirPath, { withFileTypes: true });
       for (const entry of entries) {
@@ -203,7 +214,7 @@ export class StorageScanner {
         if (entry.isFile()) {
           try {
             const stats = fs.statSync(fullPath);
-            if (stats.size > 50 * 1024 * 1024) { // Only files > 50MB
+            if (stats.size > largeFileThreshold) { // Configurable threshold
               files.push({
                 name: entry.name,
                 path: fullPath,

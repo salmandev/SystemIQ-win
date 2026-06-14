@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer, RadialBarChart, RadialBar } from 'recharts';
 import { useAppStore } from '../stores/appStore';
 import { api } from '../services/api';
@@ -112,11 +112,21 @@ function DiskBar({ drive, usedPercent, total, free, used }: {
 
 // ---- Main Dashboard ----
 export function Dashboard() {
-  const { systemInfo, realtimeData, healthScore, setHealthScore, recommendations, setRecommendations, setPage } = useAppStore();
+  const systemInfo = useAppStore(s => s.systemInfo);
+  const realtimeData = useAppStore(s => s.realtimeData);
+  const healthScore = useAppStore(s => s.healthScore);
+  const setHealthScore = useAppStore(s => s.setHealthScore);
+  const recommendations = useAppStore(s => s.recommendations);
+  const setRecommendations = useAppStore(s => s.setRecommendations);
+  const setPage = useAppStore(s => s.setPage);
+  const [profile, setProfile] = useState<MachineProfile | null>(null);
+
+  // Use refs for chart history to avoid re-render cascades
   const [cpuHistory, setCpuHistory] = useState<number[]>(Array(20).fill(30));
   const [memHistory, setMemHistory] = useState<number[]>(Array(20).fill(55));
   const [netHistory, setNetHistory] = useState<number[]>(Array(20).fill(20));
-  const [profile, setProfile] = useState<MachineProfile | null>(null);
+  const rtRef = useRef(realtimeData);
+  rtRef.current = realtimeData;
 
   useEffect(() => {
     if (realtimeData) {

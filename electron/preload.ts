@@ -78,10 +78,35 @@ const electronAPI = {
     toggle: (id: string, enabled: boolean) => ipcRenderer.invoke('automation:toggle', id, enabled),
   },
 
-  // Settings
+  // Settings (legacy key-value)
   settings: {
     get: (key?: string) => ipcRenderer.invoke('settings:get', key),
     set: (key: string, value: unknown) => ipcRenderer.invoke('settings:set', key, value),
+    getAll: () => ipcRenderer.invoke('settings:get-all'),
+    update: (partial: unknown) => ipcRenderer.invoke('settings:update', partial),
+  },
+
+  // Performance History
+  performance: {
+    getHistory: (durationMs?: number) => ipcRenderer.invoke('performance:history', durationMs),
+    getAverages: (durationMs?: number) => ipcRenderer.invoke('performance:averages', durationMs),
+  },
+
+  // Notifications
+  notifications: {
+    get: () => ipcRenderer.invoke('notifications:get'),
+    dismiss: (id: string) => ipcRenderer.invoke('notifications:dismiss', id),
+  },
+
+  // VM Scanner
+  vm: {
+    scan: () => ipcRenderer.invoke('vm:scan'),
+  },
+
+  // Scan Status
+  scan: {
+    getStatus: () => ipcRenderer.invoke('scan:status'),
+    trigger: (key: string) => ipcRenderer.invoke('scan:trigger', key),
   },
 
   // Shell

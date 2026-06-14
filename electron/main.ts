@@ -15,9 +15,16 @@ import { AutomationEngine } from './services/automation-engine';
 import { PluginManager } from './services/plugin-manager';
 import { IntelligenceService } from './services/intelligence-service';
 import { DataCache } from './services/data-cache';
+import { SettingsManager } from './services/settings-manager';
+import { ScanTracker } from './services/scan-tracker';
+import { VMScanner } from './services/vm-scanner';
+import { PerformanceCollector } from './services/performance-collector';
+import { NotificationEvaluator } from './services/notification-evaluator';
 
 let mainWindow: BrowserWindow | null = null;
 let db: Database;
+let settingsManager: SettingsManager;
+let scanTracker: ScanTracker;
 let systemService: SystemService;
 let storageScanner: StorageScanner;
 let junkDetector: JunkDetector;
@@ -32,6 +39,9 @@ let automationEngine: AutomationEngine;
 let pluginManager: PluginManager;
 let intelligenceService: IntelligenceService;
 let dataCache: DataCache;
+let vmScanner: VMScanner;
+let performanceCollector: PerformanceCollector;
+let notificationEvaluator: NotificationEvaluator;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -42,7 +52,7 @@ function createWindow() {
     minHeight: 700,
     frame: false,
     backgroundColor: '#202020',
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: 'hidden',
     titleBarOverlay: {
       color: '#202020',
       symbolColor: '#FFFFFF',
@@ -77,9 +87,14 @@ function initializeServices() {
     db = null as any;
   }
 
+  // Core infrastructure services
+  settingsManager = new SettingsManager(db);
+  scanTracker = new ScanTracker(db);
+
+  // Domain services
   systemService = new SystemService();
-  storageScanner = new StorageScanner(db);
-  junkDetector = new JunkDetector();
+  storageScanner = new StorageScanner(db, settingsManager);
+  junkDetector = new JunkDetector(settingsManager);
   duplicateFinder = new DuplicateFinder();
   startupManager = new StartupManager();
   ssdAnalyzer = new SsdHealthAnalyzer();
@@ -89,9 +104,12 @@ function initializeServices() {
   devToolsScanner = new DevToolsScanner();
   automationEngine = new AutomationEngine(db);
   pluginManager = new PluginManager();
-  intelligenceService = new IntelligenceService();
+  intelligenceService = new IntelligenceService(db);
+  vmScanner = new VMScanner(db);
+  performanceCollector = new PerformanceCollector(db, settingsManager);
+  notificationEvaluator = new NotificationEvaluator(db, settingsManager);
 
-  // Background data cache
+  // Background data cache with settings and scan tracking
   dataCache = new DataCache(db, {
     system: systemService,
     storage: storageScanner,
@@ -103,7 +121,7 @@ function initializeServices() {
     ai: aiEngine,
     devtools: devToolsScanner,
     intelligence: intelligenceService,
-  });
+  }, settingsManager, scanTracker);
   dataCache.loadFromDB();
 }
 
@@ -237,6 +255,47 @@ function registerIpcHandlers() {
     try { return db?.setSetting(key, value); } catch { /* no-op */ }
   });
 
+  // Settings Manager (typed)
+  ipcMain.handle('settings:get-all', async () => {
+    try { return settingsManager.getAll(); } catch { return null; }
+  });
+
+  ipcMain.handle('settings:update', async (_event, partial: unknown) => {
+    try { settingsManager.update(partial as any); return true; } catch { return false; }
+  });
+
+  // Performance History
+  ipcMain.handle('performance:history', async (_event, durationMs: number) => {
+    try { return performanceCollector.getHistory(durationMs || 3600000); } catch { return []; }
+  });
+
+  ipcMain.handle('performance:averages', async (_event, durationMs: number) => {
+    try { return performanceCollector.getAverages(durationMs || 3600000); } catch { return null; }
+  });
+
+  // Notifications
+  ipcMain.handle('notifications:get', async () => {
+    try { return notificationEvaluator.getPending(); } catch { return []; }
+  });
+
+  ipcMain.handle('notifications:dismiss', async (_event, id: string) => {
+    try { notificationEvaluator.dismiss(id); return true; } catch { return false; }
+  });
+
+  // VM Scanner
+  ipcMain.handle('vm:scan', async () => {
+    try { return await vmScanner.scan(); } catch { return []; }
+  });
+
+  // Scan Status
+  ipcMain.handle('scan:status', async () => {
+    try { return scanTracker.getStatusSummary(); } catch { return {}; }
+  });
+
+  ipcMain.handle('scan:trigger', async (_event, key: string) => {
+    try { return await dataCache.refreshKey(key, mainWindow); } catch { return null; }
+  });
+
   // Open external link
   ipcMain.handle('shell:open', async (_event, url: string) => {
     return shell.openExternal(url);
@@ -321,12 +380,15 @@ app.whenReady().then(() => {
   try { automationEngine.start(); } catch { /* db may be unavailable */ }
   // Start background data caching (initial scan after 3s + hourly)
   dataCache.start(mainWindow);
+  // Start performance metrics collection
+  performanceCollector.start();
 });
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     try { automationEngine.stop(); } catch { /* no-op */ }
     try { dataCache.stop(); } catch { /* no-op */ }
+    try { performanceCollector.stop(); } catch { /* no-op */ }
     try { db?.close(); } catch { /* no-op */ }
     app.quit();
   }

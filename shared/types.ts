@@ -653,6 +653,198 @@ export interface ProcessInsight {
   safeToStop: boolean;
 }
 
+// ---- Settings Types ----
+export interface FeatureFlags {
+  first_scan_enabled: boolean;
+  background_monitoring: boolean;
+  storage_scanner: boolean;
+  docker_monitoring: boolean;
+  wsl_monitoring: boolean;
+  vm_scanning: boolean;
+  ai_assistant: boolean;
+  developer_scanning: boolean;
+  junk_detection: boolean;
+  duplicate_detection: boolean;
+}
+
+export type ScanDepth = 'light' | 'normal' | 'deep';
+export type ScanIntensity = 'low_cpu' | 'balanced' | 'aggressive';
+export type ScheduleInterval = '15min' | '1hr' | '6hr' | 'daily' | 'weekly';
+export type HashMethod = 'fast' | 'balanced' | 'deep';
+
+export interface ScanPreferences {
+  scan_depth: ScanDepth;
+  scan_intensity: ScanIntensity;
+  schedule_interval: ScheduleInterval;
+  max_scan_time: number; // minutes, 0 = unlimited
+  include_drives: string[];
+  ignore_folders: string[];
+  large_file_threshold: number; // bytes
+  hash_method: HashMethod;
+  incremental_scanning: boolean;
+}
+
+export interface NotificationRuleSettings {
+  disk_warning_threshold: number; // percent
+  disk_critical_threshold: number;
+  memory_threshold: number;
+  docker_size_alert: number; // bytes
+  docker_growth_alert: number; // bytes/week
+  startup_app_added: boolean;
+  new_large_file: boolean;
+}
+
+export interface OptimizationRules {
+  auto_clean_safe: boolean;
+  confirm_moderate: boolean;
+  confirm_aggressive: boolean;
+  rollback_enabled: boolean;
+  data_retention_days: number; // 0 = forever
+}
+
+export interface UserPreferences {
+  theme: 'dark' | 'light' | 'system';
+  language: string;
+  animations: boolean;
+  start_with_windows: boolean;
+  run_background: boolean;
+  start_minimized: boolean;
+}
+
+export interface SettingsConfig {
+  feature_flags: FeatureFlags;
+  scan_preferences: ScanPreferences;
+  notification_rules: NotificationRuleSettings;
+  optimization_rules: OptimizationRules;
+  user_preferences: UserPreferences;
+}
+
+// ---- VM Inventory Types ----
+export type VMType = 'hyperv' | 'vmware' | 'virtualbox' | 'unknown';
+export type VMState = 'running' | 'stopped' | 'paused' | 'saved' | 'unknown';
+
+export interface VMDisk {
+  path: string;
+  size: number;
+  type: 'vhdx' | 'vmdk' | 'vdi' | 'unknown';
+}
+
+export interface VMSnapshot {
+  name: string;
+  timestamp: number;
+  size: number;
+}
+
+export interface VMInventory {
+  id: string;
+  name: string;
+  type: VMType;
+  state: VMState;
+  memory: number;
+  cpus: number;
+  disks: VMDisk[];
+  snapshots: VMSnapshot[];
+  total_size: number;
+  last_used: number;
+  path: string;
+}
+
+// ---- Performance History Types ----
+export interface PerformanceSample {
+  timestamp: number;
+  cpu_load: number;
+  mem_used: number;
+  mem_total: number;
+  disk_read: number;
+  disk_write: number;
+  net_rx: number;
+  net_tx: number;
+}
+
+export interface PerformanceAverages {
+  period: string;
+  cpu_avg: number;
+  cpu_max: number;
+  mem_avg: number;
+  mem_max: number;
+  disk_read_avg: number;
+  disk_write_avg: number;
+  net_rx_avg: number;
+  net_tx_avg: number;
+  sample_count: number;
+}
+
+// ---- Notification Types ----
+export type NotificationSeverity = 'info' | 'warning' | 'critical';
+export type NotificationType = 'disk' | 'memory' | 'docker' | 'startup' | 'performance' | 'scan' | 'system';
+
+export interface NotificationEvent {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  severity: NotificationSeverity;
+  timestamp: number;
+  dismissed: boolean;
+  action?: { label: string; handler: string; params?: Record<string, unknown> };
+}
+
+export interface NotificationRule {
+  id: string;
+  name: string;
+  metric: string;
+  operator: '>' | '<' | '>=' | '<=' | 'changed';
+  threshold: number;
+  enabled: boolean;
+  last_triggered: number;
+  cooldown_ms: number;
+  actions: string[];
+}
+
+// ---- Scan Metadata Types ----
+export type ScanStatus = 'idle' | 'running' | 'completed' | 'failed' | 'skipped';
+
+export interface ScanMetadata {
+  key: string;
+  last_run: number;
+  duration: number;
+  status: ScanStatus;
+  incremental: boolean;
+  items_scanned: number;
+  error?: string;
+}
+
+// ---- Docker Growth Alert ----
+export interface DockerGrowthAlert {
+  category: 'images' | 'containers' | 'volumes' | 'build_cache' | 'total';
+  previous_size: number;
+  current_size: number;
+  growth_bytes: number;
+  growth_percent: number;
+  period_days: number;
+  severity: NotificationSeverity;
+  message: string;
+}
+
+// ---- WSL Distribution Enhanced ----
+export interface WSLDistribution {
+  name: string;
+  version: string;
+  size: number;
+  vhdx_path?: string;
+  state: 'running' | 'stopped' | 'unknown';
+  last_used?: number;
+  package_cache_size?: number;
+}
+
+// ---- Optimization Profile ----
+export interface OptimizationProfile {
+  id: string;
+  name: string;
+  config: Record<string, unknown>;
+  active: boolean;
+}
+
 // ---- IPC Channel Types ----
 export type IpcChannel =
   | 'system:get-info'
@@ -677,6 +869,8 @@ export type IpcChannel =
   | 'report:generate'
   | 'settings:get'
   | 'settings:set'
+  | 'settings:get-all'
+  | 'settings:update'
   | 'theme:get'
   | 'theme:set'
   | 'intelligence:get-profile'
@@ -689,4 +883,11 @@ export type IpcChannel =
   | 'intelligence:get-process-insights'
   | 'intelligence:scan-dev-projects'
   | 'intelligence:get-docker-info'
-  | 'intelligence:get-k8s-wsl-info';
+  | 'intelligence:get-k8s-wsl-info'
+  | 'performance:history'
+  | 'performance:averages'
+  | 'notifications:get'
+  | 'notifications:dismiss'
+  | 'vm:scan'
+  | 'scan:status'
+  | 'scan:trigger';

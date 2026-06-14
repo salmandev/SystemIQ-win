@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, useCallback, memo } from 'react';
 import { useAppStore } from '../stores/appStore';
 import { api } from '../services/api';
 import { formatSize, formatDuration } from '../services/utils';
@@ -47,8 +47,14 @@ function Icon({ path, className = 'w-5 h-5' }: { path: string; className?: strin
 }
 
 // ---- Title Bar ----
-function TitleBar() {
-  const { theme, toggleTheme, searchOpen, toggleSearch, searchQuery, setSearchQuery, setPage } = useAppStore();
+const TitleBar = memo(function TitleBar() {
+  const theme = useAppStore(s => s.theme);
+  const toggleTheme = useAppStore(s => s.toggleTheme);
+  const searchOpen = useAppStore(s => s.searchOpen);
+  const toggleSearch = useAppStore(s => s.toggleSearch);
+  const searchQuery = useAppStore(s => s.searchQuery);
+  const setSearchQuery = useAppStore(s => s.setSearchQuery);
+  const setPage = useAppStore(s => s.setPage);
   const [isMaximized, setIsMaximized] = useState(false);
 
   const handleMinimize = () => api.window.minimize();
@@ -56,17 +62,17 @@ function TitleBar() {
   const handleClose = () => api.window.close();
 
   return (
-    <div className="flex items-center h-10 bg-[var(--bg-titlebar)] backdrop-blur-xl border-b border-[var(--border)] select-none z-50" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+    <div className="flex items-center h-10 bg-[var(--bg-titlebar)] border-b border-[var(--border)] select-none z-50" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
       {/* App Icon & Title */}
       <div className="flex items-center gap-2 px-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <div className="w-4 h-4 rounded-sm bg-gradient-to-br from-[var(--accent)] to-purple-500" />
         <span className="text-xs font-semibold text-[var(--text-secondary)]">SystemIQ</span>
       </div>
 
-      {/* Search Bar - Draggable spacer */}
-      <div className="flex-1 flex justify-center" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      {/* Search Bar - Draggable spacer, only button/input is no-drag */}
+      <div className="flex-1 flex justify-center" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
         {searchOpen ? (
-          <div className="flex items-center gap-2 w-96 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg px-3 py-1 animate-fade-in">
+          <div className="flex items-center gap-2 w-96 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg px-3 py-1 animate-fade-in" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" className="w-4 h-4 text-[var(--text-tertiary)]" />
             <input
               type="text"
@@ -80,7 +86,7 @@ function TitleBar() {
             <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-tertiary)]">Esc</kbd>
           </div>
         ) : (
-          <button onClick={toggleSearch} className="flex items-center gap-2 px-3 py-1 rounded-lg text-xs text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] transition-fluent">
+          <button onClick={toggleSearch} className="flex items-center gap-2 px-3 py-1 rounded-lg text-xs text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] transition-colors" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" className="w-3.5 h-3.5" />
             <span>Search</span>
             <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-hover)] ml-2">Ctrl+K</kbd>
@@ -115,16 +121,19 @@ function TitleBar() {
       </div>
     </div>
   );
-}
+});
 
 // ---- Sidebar ----
-function Sidebar() {
-  const { currentPage, setPage, sidebarCollapsed, toggleSidebar } = useAppStore();
+const Sidebar = memo(function Sidebar() {
+  const currentPage = useAppStore(s => s.currentPage);
+  const setPage = useAppStore(s => s.setPage);
+  const sidebarCollapsed = useAppStore(s => s.sidebarCollapsed);
+  const toggleSidebar = useAppStore(s => s.toggleSidebar);
 
   const groups = Array.from(new Set(navItems.map(i => i.group)));
 
   return (
-    <div className={`flex flex-col h-full bg-[var(--bg-sidebar)] backdrop-blur-xl border-r border-[var(--border)] transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-[52px]' : 'w-[220px]'}`}>
+    <div className={`flex flex-col h-full bg-[var(--bg-sidebar)] border-r border-[var(--border)] ${sidebarCollapsed ? 'w-[52px]' : 'w-[220px]'}`} style={{ transition: 'width 0.3s ease-in-out' }}>
       {/* Logo */}
       <div className={`flex items-center gap-3 h-10 border-b border-[var(--border)] flex-shrink-0 ${sidebarCollapsed ? 'justify-center px-1' : 'px-3'}`}>
         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[var(--accent)] to-purple-500 flex items-center justify-center flex-shrink-0 shadow-lg">
@@ -190,11 +199,15 @@ function Sidebar() {
       </button>
     </div>
   );
-}
+});
 
 // ---- Main Layout ----
 export function Layout({ children }: { children: ReactNode }) {
-  const { systemInfo, setSystemInfo, setRealtimeData, setHealthScore, setRecommendations } = useAppStore();
+  const setSystemInfo = useAppStore(s => s.setSystemInfo);
+  const setRealtimeData = useAppStore(s => s.setRealtimeData);
+  const setHealthScore = useAppStore(s => s.setHealthScore);
+  const setRecommendations = useAppStore(s => s.setRecommendations);
+  const systemInfo = useAppStore(s => s.systemInfo);
   const [bgScanning, setBgScanning] = useState(false);
 
   // Load cached data instantly on mount, then subscribe to updates
@@ -219,13 +232,13 @@ export function Layout({ children }: { children: ReactNode }) {
       api.system.getInfo().then((info: any) => { if (info) setSystemInfo(info); }).catch(() => {});
     }
 
-    // Realtime updates every 2 seconds (lightweight)
+    // Realtime updates every 3 seconds (reduced from 2s for performance)
     const interval = setInterval(async () => {
       try {
         const data = await api.system.getRealtime();
         setRealtimeData(data);
       } catch { /* ignore */ }
-    }, 2000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);

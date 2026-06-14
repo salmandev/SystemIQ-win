@@ -20,7 +20,8 @@ import { SecurityPrivacy } from './pages/SecurityPrivacy';
 import { useAppStore } from './stores/appStore';
 
 export function App() {
-  const { currentPage, theme } = useAppStore();
+  const currentPage = useAppStore(s => s.currentPage);
+  const theme = useAppStore(s => s.theme);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');

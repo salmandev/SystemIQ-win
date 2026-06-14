@@ -4,7 +4,10 @@ import { api } from '../services/api';
 import { formatSize } from '../services/utils';
 
 export function JunkCleaner() {
-  const { junkScan, setJunkScan, loading, setLoading } = useAppStore();
+  const junkScan = useAppStore(s => s.junkScan);
+  const setJunkScan = useAppStore(s => s.setJunkScan);
+  const loading = useAppStore(s => s.loading);
+  const setLoading = useAppStore(s => s.setLoading);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [cleaning, setCleaning] = useState(false);
 

@@ -184,7 +184,12 @@ function TrashButton({ onClick, className = '' }: { onClick: (e: React.MouseEven
 
 // ─── Main Component ─────────────────────────────────────
 export function StorageAnalyzer() {
-  const { storageScan, setStorageScan, setStorageGrowth, storageGrowth, loading, setLoading } = useAppStore();
+  const storageScan = useAppStore(s => s.storageScan);
+  const setStorageScan = useAppStore(s => s.setStorageScan);
+  const setStorageGrowth = useAppStore(s => s.setStorageGrowth);
+  const storageGrowth = useAppStore(s => s.storageGrowth);
+  const loading = useAppStore(s => s.loading);
+  const setLoading = useAppStore(s => s.setLoading);
   const [tab, setTab] = useState<CleanTab>('overview');
   const [breadcrumbs, setBreadcrumbs] = useState<{ node: FolderNode; label: string }[]>([]);
   const [currentNodes, setCurrentNodes] = useState<FolderNode[]>([]);

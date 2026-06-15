@@ -137,9 +137,17 @@ export function Dashboard() {
   }, [realtimeData]);
 
   useEffect(() => {
-    api.health.calculate().then(setHealthScore);
-    api.ai.recommend().then(setRecommendations);
-    api.intelligence.getProfile().then(setProfile);
+    // Instant: load from SQLite cache first (sub-50ms)
+    api.cache.get('health-score').then((c: any) => { if (c?.data) setHealthScore(c.data as any); }).catch(() => {});
+    api.cache.get('recommendations').then((c: any) => { if (c?.data) setRecommendations(c.data as any); }).catch(() => {});
+    api.cache.get('machine-profile').then((c: any) => { if (c?.data) setProfile(c.data as any); }).catch(() => {});
+
+    // Stagger live fetches to avoid IPC burst
+    const t1 = setTimeout(() => { api.health.calculate().then(setHealthScore).catch(() => {}); }, 500);
+    const t2 = setTimeout(() => { api.ai.recommend().then(setRecommendations).catch(() => {}); }, 1500);
+    const t3 = setTimeout(() => { api.intelligence.getProfile().then(setProfile).catch(() => {}); }, 3000);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
   const info = systemInfo;

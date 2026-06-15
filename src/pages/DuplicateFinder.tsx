@@ -23,13 +23,21 @@ function ToastNotification({ toast, onDismiss }: { toast: Toast | null; onDismis
 }
 
 export function DuplicateFinder() {
-  const { duplicateScan, setDuplicateScan, loading, setLoading } = useAppStore();
+  const duplicateScan = useAppStore(s => s.duplicateScan);
+  const setDuplicateScan = useAppStore(s => s.setDuplicateScan);
+  const loading = useAppStore(s => s.loading);
+  const setLoading = useAppStore(s => s.setLoading);
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>({ show: false, title: '', message: '', paths: [] });
 
-  useEffect(() => { if (!duplicateScan) handleScan(); }, []);
+  useEffect(() => {
+    api.cache.get('duplicates-scan').then((c: any) => {
+      if (c?.data) setDuplicateScan(c.data as any);
+      else if (!duplicateScan) handleScan();
+    }).catch(() => { if (!duplicateScan) handleScan(); });
+  }, []);
 
   const handleScan = async () => {
     setLoading('dup-scan', true);

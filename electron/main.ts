@@ -63,8 +63,17 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      // Performance: disable spellcheck saves ~10MB
+      spellcheck: false,
+      // Performance: disable image animations not needed for utility app
+      imageAnimationPolicy: 'noAnimation',
     },
   });
+
+  // Reduce memory: limit renderer cache
+  if (!process.env.VITE_DEV_SERVER_URL) {
+    mainWindow.webContents.session.setPermissionRequestHandler((_wc, _perm, cb) => cb(false));
+  }
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);

@@ -4,8 +4,16 @@ import { api } from '../services/api';
 import { formatSize, formatDuration } from '../services/utils';
 
 export function StartupOptimizer() {
-  const { startupItems, setStartupItems } = useAppStore();
-  useEffect(() => { if (startupItems.length === 0) api.startup.getItems().then(setStartupItems); }, []);
+  const startupItems = useAppStore(s => s.startupItems);
+  const setStartupItems = useAppStore(s => s.setStartupItems);
+  useEffect(() => {
+    if (startupItems.length === 0) {
+      api.cache.get('startup-items').then((c: any) => {
+        if (c?.data) setStartupItems(c.data as any);
+        else api.startup.getItems().then(setStartupItems).catch(() => {});
+      }).catch(() => { api.startup.getItems().then(setStartupItems); });
+    }
+  }, []);
   const totalBootImpact = startupItems.filter(i => i.enabled).reduce((s, i) => s + i.bootTimeImpact, 0);
   const totalMemory = startupItems.filter(i => i.enabled).reduce((s, i) => s + i.memoryUsage, 0);
 
@@ -48,10 +56,11 @@ export function StartupOptimizer() {
 }
 
 export function ProcessIntelligence() {
-  const { processes, setProcesses } = useAppStore();
+  const processes = useAppStore(s => s.processes);
+  const setProcesses = useAppStore(s => s.setProcesses);
   useEffect(() => {
     api.system.getProcesses().then(setProcesses);
-    const interval = setInterval(() => api.system.getProcesses().then(setProcesses), 3000);
+    const interval = setInterval(() => api.system.getProcesses().then(setProcesses), 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -83,8 +92,16 @@ export function ProcessIntelligence() {
 }
 
 export function DevToolsScanner() {
-  const { devToolsScan, setDevToolsScan, loading, setLoading } = useAppStore();
-  useEffect(() => { if (!devToolsScan) handleScan(); }, []);
+  const devToolsScan = useAppStore(s => s.devToolsScan);
+  const setDevToolsScan = useAppStore(s => s.setDevToolsScan);
+  const loading = useAppStore(s => s.loading);
+  const setLoading = useAppStore(s => s.setLoading);
+  useEffect(() => {
+    api.cache.get('devtools-scan').then((c: any) => {
+      if (c?.data) setDevToolsScan(c.data as any);
+      else if (!devToolsScan) handleScan();
+    }).catch(() => { if (!devToolsScan) handleScan(); });
+  }, []);
   const handleScan = async () => { setLoading('devtools', true); try { setDevToolsScan(await api.devtools.scan()); } finally { setLoading('devtools', false); } };
 
   return (

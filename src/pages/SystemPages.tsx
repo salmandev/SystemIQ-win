@@ -5,8 +5,13 @@ import { api } from '../services/api';
 import { formatSize, formatDuration, getScoreColor, getScoreLabel } from '../services/utils';
 
 export function SsdHealth() {
-  const { ssdHealth, setSsdHealth } = useAppStore();
-  useEffect(() => { api.ssd.getHealth().then(setSsdHealth); }, []);
+  const ssdHealth = useAppStore(s => s.ssdHealth);
+  const setSsdHealth = useAppStore(s => s.setSsdHealth);
+  useEffect(() => {
+    // Load from cache first, then refresh
+    api.cache.get('ssd-health').then((c: any) => { if (c?.data) setSsdHealth(c.data as any); }).catch(() => {});
+    api.ssd.getHealth().then(setSsdHealth).catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -40,8 +45,12 @@ export function SsdHealth() {
 }
 
 export function HealthScore() {
-  const { healthScore, setHealthScore } = useAppStore();
-  useEffect(() => { api.health.calculate().then(setHealthScore); }, []);
+  const healthScore = useAppStore(s => s.healthScore);
+  const setHealthScore = useAppStore(s => s.setHealthScore);
+  useEffect(() => {
+    api.cache.get('health-score').then((c: any) => { if (c?.data) setHealthScore(c.data as any); }).catch(() => {});
+    api.health.calculate().then(setHealthScore).catch(() => {});
+  }, []);
   if (!healthScore) return <div className="flex items-center justify-center h-64"><p className="text-[var(--text-secondary)]">Calculating health score...</p></div>;
 
   const scores = [
@@ -93,7 +102,8 @@ export function HealthScore() {
 }
 
 export function AIChat() {
-  const { chatMessages, addChatMessage } = useAppStore();
+  const chatMessages = useAppStore(s => s.chatMessages);
+  const addChatMessage = useAppStore(s => s.addChatMessage);
   const [input, setInput] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);

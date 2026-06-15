@@ -48,6 +48,7 @@ const DEFAULT_INTERVALS: Record<string, number> = {
   'health-score': 30 * 60 * 1000,       // 30 min
   'recommendations': 30 * 60 * 1000,    // 30 min
   'junk-scan': 60 * 60 * 1000,          // 1 hr
+  'duplicates-scan': 2 * 60 * 60 * 1000, // 2 hr
   'startup-items': 60 * 60 * 1000,      // 1 hr
   'ssd-health': 6 * 60 * 60 * 1000,     // 6 hr
   'devtools': 60 * 60 * 1000,           // 1 hr
@@ -71,7 +72,8 @@ const SCAN_PRIORITIES: Record<string, number> = {
   'pc-diagnosis': 4,
   'process-insights': 5,
   'junk-scan': 10,
-  'startup-items': 11,
+  'duplicates-scan': 11,
+  'startup-items': 12,
   'ssd-health': 12,
   'devtools': 20,
   'dev-projects': 21,
@@ -86,12 +88,13 @@ const SCAN_PRIORITIES: Record<string, number> = {
 };
 
 const HEAVY_SCANS = new Set([
-  'junk-scan', 'devtools', 'dev-projects', 'docker-info',
+  'junk-scan', 'duplicates-scan', 'devtools', 'dev-projects', 'docker-info',
   'k8s-wsl-info', 'vm-inventory', 'privacy-scan', 'installed-apps',
 ]);
 
 const FEATURE_FLAG_MAP: Record<string, string> = {
   'junk-scan': 'junk_detection',
+  'duplicates-scan': 'duplicate_detection',
   'devtools': 'developer_scanning',
   'dev-projects': 'developer_scanning',
   'docker-info': 'docker_monitoring',
@@ -176,6 +179,7 @@ export class DataCache extends EventEmitter {
       ['health-score', () => s.health.calculate(), false],
       ['recommendations', () => s.ai.getRecommendations(), false],
       ['junk-scan', () => s.junk.scan(), true],
+      ['duplicates-scan', () => s.duplicates.scan(['C:\\Users']), true],
       ['startup-items', () => s.startup.getItems(), false],
       ['ssd-health', () => s.ssd.getHealth(), false],
       ['devtools', () => s.devtools.scan(), true],

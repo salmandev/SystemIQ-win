@@ -209,6 +209,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const setRecommendations = useAppStore(s => s.setRecommendations);
   const systemInfo = useAppStore(s => s.systemInfo);
   const [bgScanning, setBgScanning] = useState(false);
+  const [monitorInterval, setMonitorInterval] = useState(3000); // default 3s
 
   // Load cached data instantly on mount, then subscribe to updates
   useEffect(() => {
@@ -224,6 +225,15 @@ export function Layout({ children }: { children: ReactNode }) {
         const cachedRecs = await api.cache.get('recommendations');
         if (cachedRecs?.data) setRecommendations(cachedRecs.data as any);
       } catch { /* cache not available */ }
+
+      // Load monitoring interval from settings
+      try {
+        const settings = await api.settings.getAll();
+        if (settings?.scan_preferences) {
+          const intensityMap: Record<string, number> = { low_cpu: 5000, balanced: 3000, aggressive: 1500 };
+          setMonitorInterval(intensityMap[settings.scan_preferences.scan_intensity] || 3000);
+        }
+      } catch { /* use default */ }
     };
     loadCached();
 
@@ -232,16 +242,16 @@ export function Layout({ children }: { children: ReactNode }) {
       api.system.getInfo().then((info: any) => { if (info) setSystemInfo(info); }).catch(() => {});
     }
 
-    // Realtime updates every 3 seconds (reduced from 2s for performance)
+    // Realtime updates using configurable interval
     const interval = setInterval(async () => {
       try {
         const data = await api.system.getRealtime();
         setRealtimeData(data);
       } catch { /* ignore */ }
-    }, 3000);
+    }, monitorInterval);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [monitorInterval]);
 
   // Subscribe to background cache updates
   useEffect(() => {
@@ -271,7 +281,7 @@ export function Layout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const poll = setInterval(async () => {
       try { setBgScanning(await api.cache.isScanning()); } catch { /* */ }
-    }, 3000);
+    }, 10000); // Check scan status every 10s (low priority UI indicator)
     return () => clearInterval(poll);
   }, []);
 

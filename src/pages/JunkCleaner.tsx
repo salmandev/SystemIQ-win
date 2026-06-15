@@ -11,7 +11,19 @@ export function JunkCleaner() {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [cleaning, setCleaning] = useState(false);
 
-  useEffect(() => { if (!junkScan) handleScan(); }, []);
+  useEffect(() => {
+    // Try cache first for instant load
+    api.cache.get('junk-scan').then((c: any) => {
+      if (c?.data) {
+        setJunkScan(c.data as any);
+        const selected = new Set<string>();
+        (c.data as any).categories?.forEach((cat: any) => { if (cat.recommended) selected.add(cat.id); });
+        setSelectedCategories(selected);
+      } else if (!junkScan) {
+        handleScan();
+      }
+    }).catch(() => { if (!junkScan) handleScan(); });
+  }, []);
 
   const handleScan = async () => {
     setLoading('junk-scan', true);
